@@ -44,14 +44,11 @@ if uploaded_file:
     st.write(f"Progress: {len(reviewed_cases)}/{len(df)} cases completed")
     st.write(f"Case {current_index+1}/{len(df)}: {case.get('accession', '')}")
 
-    # Studio Link Button (Markdown-based)
+    # Studio Link Auto-launch and Link Display
     studio_url = case.get("studio_link", "")
     if studio_url:
-        col_open, col_text = st.columns([1, 2])
-        with col_open:
-            st.markdown(f"[🔗 Open Studio Link]({studio_url})", unsafe_allow_html=True)
-        with col_text:
-            st.write("👈 **Click here to launch the first case. The rest will auto-launch.**")
+        st.markdown(f"[🔗 Open Studio Link]({studio_url})", unsafe_allow_html=True)
+        st.markdown(f"<script>window.open('{studio_url}', '_blank');</script>", unsafe_allow_html=True)
     else:
         st.warning("No studio link available for this case.")
 
