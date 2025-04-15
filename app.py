@@ -27,6 +27,11 @@ if uploaded_file:
     else:
         df['completed'] = df['completed'].fillna("no").astype(str).str.strip().str.lower()
 
+    if "dataframe" not in st.session_state:
+        st.session_state["dataframe"] = df.copy()
+
+    df = st.session_state["dataframe"]
+
     case_indices = df.index.tolist()
     reviewed_cases = df[df['completed'] == "yes"]
     unreviewed_cases = df[df['completed'] == "no"]
@@ -68,12 +73,12 @@ if uploaded_file:
 
     with col2:
         if st.button("Submit & Next"):
-            df.at[current_index, 'review_(tp/fp)'] = tp_fp
-            df.at[current_index, '2nd_opinion_(y/n)'] = "Yes" if second_opinion else "No"
-            df.at[current_index, 'request_report_(y/n)'] = request_report
-            df.at[current_index, 'location/type'] = location_type.strip()
-            df.at[current_index, 'comments'] = comments.strip()
-            df.at[current_index, 'completed'] = "yes"
+            st.session_state["dataframe"].at[current_index, 'review_(tp/fp)'] = tp_fp
+            st.session_state["dataframe"].at[current_index, '2nd_opinion_(y/n)'] = "Yes" if second_opinion else "No"
+            st.session_state["dataframe"].at[current_index, 'request_report_(y/n)'] = request_report
+            st.session_state["dataframe"].at[current_index, 'location/type'] = location_type.strip()
+            st.session_state["dataframe"].at[current_index, 'comments'] = comments.strip()
+            st.session_state["dataframe"].at[current_index, 'completed'] = "yes"
 
             next_index = unreviewed_cases.index[unreviewed_cases.index > current_index].min()
             st.session_state["current_case_index"] = next_index if not pd.isna(next_index) else None
@@ -93,7 +98,7 @@ if uploaded_file:
 
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name="Case Data")
+        st.session_state["dataframe"].to_excel(writer, index=False, sheet_name="Case Data")
         writer.book.create_sheet("index")
         index_sheet = writer.sheets["index"]
         index_sheet.append(["Sheet", "Last_Index"])
