@@ -47,15 +47,21 @@ if uploaded_file:
 
         st.session_state["all_sheets"] = all_sheets
         st.session_state["df"] = df
-        st.session_state["last_index"] = last_index
-        st.session_state["current_case_index"] = last_index
+
+        valid_indices = df.index.tolist()
+        st.session_state["current_case_index"] = last_index if last_index in valid_indices else valid_indices[0] if valid_indices else None
 
     df = st.session_state["df"]
     all_sheets = st.session_state["all_sheets"]
     case_indices = df.index.tolist()
     reviewed_cases = df[df["completed"] == "yes"]
     unreviewed_cases = df[df["completed"] == "no"]
-    current_index = st.session_state["current_case_index"]
+    current_index = st.session_state.get("current_case_index")
+
+    if current_index not in df.index:
+        current_index = unreviewed_cases.index.min() if not unreviewed_cases.empty else df.index.min()
+        st.session_state["current_case_index"] = current_index
+
     case = df.loc[current_index]
 
     st.write(f"Progress: {len(reviewed_cases)}/{len(df)} cases completed")
@@ -84,11 +90,11 @@ if uploaded_file:
             for k, v in default_values.items():
                 st.session_state[f"{k}_{idx}"] = v
         else:
-            st.session_state[f"tp-fp_{idx}"] = row["review_(tp/fp)"]
-            st.session_state[f"second-opinion_{idx}"] = row["2nd_opinion_(y/n)"] == "Yes"
-            st.session_state[f"request-report_{idx}"] = row["request_report_(y/n)"]
-            st.session_state[f"location-type_{idx}"] = row["location/type"] if isinstance(row["location/type"], str) else ""
-            st.session_state[f"comment_{idx}"] = row["comments"] if isinstance(row["comments"], str) else ""
+            st.session_state[f"tp-fp_{idx}"] = row.get("review_(tp/fp)", "TP")
+            st.session_state[f"second-opinion_{idx}"] = row.get("2nd_opinion_(y/n)", "No") == "Yes"
+            st.session_state[f"request-report_{idx}"] = row.get("request_report_(y/n)", "No")
+            st.session_state[f"location-type_{idx}"] = row.get("location/type", "")
+            st.session_state[f"comment_{idx}"] = row.get("comments", "")
 
     reset_form(current_index)
 
