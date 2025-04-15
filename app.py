@@ -9,6 +9,18 @@ from openpyxl.utils import get_column_letter
 st.set_page_config(page_title="AI Review Workflow", layout="wide")
 st.title("AI Review Workflow")
 
+# 🔐 Password protection
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+if not st.session_state["authenticated"]:
+    pwd = st.text_input("Enter password to access reviewer", type="password")
+    if pwd == "aireview2025":
+        st.session_state["authenticated"] = True
+        st.experimental_rerun()
+    else:
+        st.stop()
+
 uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
 
 if uploaded_file:
@@ -209,6 +221,6 @@ with pd.ExcelWriter(output, engine="openpyxl") as writer:
 st.download_button(
     label="📥 Download Updated Excel",
     data=output.getvalue(),
-    file_name="updated_review.xlsx",
+    file_name=f"{uploaded_file.name.replace('.xlsx', '')}-updated-{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 )
