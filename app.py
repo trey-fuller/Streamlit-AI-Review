@@ -82,7 +82,9 @@ if uploaded_file:
         st.success("All cases have been completed.")
         st.stop()
 
-case = df.loc[current_index]
+
+    
+        case = df.loc[current_index]
 
 st.write(f"Progress: {len(reviewed_cases)}/{len(df)} cases completed")
 st.write(f"Case {current_index+1}/{len(df)}: {case.get('accession', '')}")
