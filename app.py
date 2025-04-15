@@ -153,11 +153,12 @@ with col3:
         df.at[current_index, "completed"] = "yes"
 
         all_sheets["case_data"] = df
-        index_sheet = all_sheets.get("index", pd.DataFrame(columns=["Sheet", "Last_Index"]))
+        index_sheet = all_sheets.get("index", pd.DataFrame(columns=["sheet", "last_index"]))
+        index_sheet.columns = index_sheet.columns.str.strip().str.lower()
         if "sheet" not in index_sheet.columns or "last_index" not in index_sheet.columns:
-            index_sheet = pd.DataFrame(columns=["Sheet", "Last_Index"])
+            index_sheet = pd.DataFrame(columns=["sheet", "last_index"])
         if not index_sheet.empty:
-            index_sheet = index_sheet.set_index("Sheet")
+            index_sheet = index_sheet.set_index("sheet")
         index_sheet.loc["case_data", "Last_Index"] = current_index
         all_sheets["index"] = index_sheet.reset_index()
 
