@@ -32,10 +32,13 @@ if uploaded_file:
             )
 
         df = next((v for k, v in all_sheets.items() if k.strip().lower() == "case data"), pd.DataFrame())
-        if "completed" not in df.columns:
-            df["completed"] = "no"
+
+        
+        # ensure 'completed' exists and is normalized
+        if "completed" in df.columns:
+                df["completed"] = df["completed"].fillna("no").astype(str).str.strip().str.lower()
         else:
-            df["completed"] = df["completed"].fillna("no").astype(str).str.strip().str.lower()
+                df["completed"] = "no"
 
         index_sheet = all_sheets.get("index", pd.DataFrame())
         if not index_sheet.empty and "sheet" in index_sheet.columns and "last_index" in index_sheet.columns:
