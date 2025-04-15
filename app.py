@@ -19,42 +19,78 @@ if uploaded_file:
         st.error("Sheet 'Case Data' not found in the uploaded file.")
         st.stop()
 
-    df = pd.read_excel(xls, sheet_name="Case Data")
-    df.columns = df.columns.map(str).str.strip().str.replace(r'\s+', '_', regex=True).str.lower()
+    if "all_sheets" not in st.session_state:
+        all_sheets = {sheet: pd.read_excel(xls, sheet) for sheet in xls.sheet_names}
 
-    if 'completed' not in df.columns:
-        df['completed'] = "no"
-    else:
-        df['completed'] = df['completed'].fillna("no").astype(str).str.strip().str.lower()
+        for sheet in all_sheets:
+            all_sheets[sheet].columns = (
+                all_sheets[sheet]
+                .columns.map(str)
+                .str.strip()
+                .str.replace(r'\s+', '_', regex=True)
+                .str.lower()
+            )
 
-    if "dataframe" not in st.session_state:
-        st.session_state["dataframe"] = df.copy()
+        df = all_sheets.get("case_data", pd.DataFrame())
+        if "completed" not in df.columns:
+            df["completed"] = "no"
+        else:
+            df["completed"] = df["completed"].fillna("no").astype(str).str.strip().str.lower()
 
-    df = st.session_state["dataframe"]
+        index_sheet = all_sheets.get("index", pd.DataFrame())
+        if not index_sheet.empty and "sheet" in index_sheet.columns and "last_index" in index_sheet.columns:
+            last_index = (
+                index_sheet.set_index("sheet").to_dict().get("last_index", {}).get("case_data", 0)
+            )
+        else:
+            last_index = 0
 
+        st.session_state["all_sheets"] = all_sheets
+        st.session_state["df"] = df
+        st.session_state["last_index"] = last_index
+        st.session_state["current_case_index"] = last_index
+
+    df = st.session_state["df"]
+    all_sheets = st.session_state["all_sheets"]
     case_indices = df.index.tolist()
-    reviewed_cases = df[df['completed'] == "yes"]
-    unreviewed_cases = df[df['completed'] == "no"]
-
-    if "current_case_index" not in st.session_state:
-        st.session_state["current_case_index"] = unreviewed_cases.index.min() if not unreviewed_cases.empty else None
-
-    if st.session_state["current_case_index"] is None:
-        st.success("You have completed all available cases!")
-        st.stop()
-
+    reviewed_cases = df[df["completed"] == "yes"]
+    unreviewed_cases = df[df["completed"] == "no"]
     current_index = st.session_state["current_case_index"]
     case = df.loc[current_index]
 
     st.write(f"Progress: {len(reviewed_cases)}/{len(df)} cases completed")
     st.write(f"Case {current_index+1}/{len(df)}: {case.get('accession', '')}")
 
-    # Studio Link Manual Button opens in a new tab
-    studio_url = case.get("studio_link", "")
-    if studio_url:
-        st.markdown(f"<a href='{studio_url}' target='_blank'><button>Open Studio Link</button></a>", unsafe_allow_html=True)
-    else:
-        st.warning("No studio link available for this case.")
+    col_open, col_text = st.columns([1, 2])
+    with col_open:
+        studio_url = case.get("studio_link", "")
+        if studio_url:
+            st.markdown(f"<a href='{studio_url}' target='_blank'><button>Open Studio Link</button></a>", unsafe_allow_html=True)
+
+    with col_text:
+        st.write("👈 **Click here to launch the first case. The rest will auto-launch.**")
+
+    default_values = {
+        "tp-fp": "TP",
+        "second-opinion": False,
+        "request-report": "No",
+        "location-type": "",
+        "comment": ""
+    }
+
+    def reset_form(idx):
+        row = df.loc[idx]
+        if row["completed"] == "no":
+            for k, v in default_values.items():
+                st.session_state[f"{k}_{idx}"] = v
+        else:
+            st.session_state[f"tp-fp_{idx}"] = row["review_(tp/fp)"]
+            st.session_state[f"second-opinion_{idx}"] = row["2nd_opinion_(y/n)"] == "Yes"
+            st.session_state[f"request-report_{idx}"] = row["request_report_(y/n)"]
+            st.session_state[f"location-type_{idx}"] = row["location/type"] if isinstance(row["location/type"], str) else ""
+            st.session_state[f"comment_{idx}"] = row["comments"] if isinstance(row["comments"], str) else ""
+
+    reset_form(current_index)
 
     tp_fp = st.radio("True Positive / False Positive", ["TP", "FP"], key=f"tp-fp_{current_index}")
     second_opinion = st.checkbox("Request Second Opinion", key=f"second-opinion_{current_index}")
@@ -62,57 +98,75 @@ if uploaded_file:
     location_type = st.text_area("Location/Type", key=f"location-type_{current_index}")
     comments = st.text_area("Comments (Optional)", key=f"comment_{current_index}")
 
-    col1, col2 = st.columns([1, 1])
+    col1, col2, col3 = st.columns([1, 2, 1])
 
     with col1:
         if st.button("Previous Case"):
-            prev_index = case_indices.index(current_index) - 1
-            if prev_index >= 0:
-                st.session_state["current_case_index"] = case_indices[prev_index]
+            prev_idx = case_indices.index(current_index) - 1
+            if prev_idx >= 0:
+                st.session_state["current_case_index"] = case_indices[prev_idx]
+                reset_form(st.session_state["current_case_index"])
                 st.rerun()
 
     with col2:
+        if st.button("Next Case"):
+            next_idx = case_indices.index(current_index) + 1
+            if next_idx < len(case_indices):
+                st.session_state["current_case_index"] = case_indices[next_idx]
+                reset_form(st.session_state["current_case_index"])
+                st.rerun()
+
+    with col3:
         if st.button("Submit & Next"):
-            st.session_state["dataframe"].at[current_index, 'review_(tp/fp)'] = tp_fp
-            st.session_state["dataframe"].at[current_index, '2nd_opinion_(y/n)'] = "Yes" if second_opinion else "No"
-            st.session_state["dataframe"].at[current_index, 'request_report_(y/n)'] = request_report
-            st.session_state["dataframe"].at[current_index, 'location/type'] = location_type.strip()
-            st.session_state["dataframe"].at[current_index, 'comments'] = comments.strip()
-            st.session_state["dataframe"].at[current_index, 'completed'] = "yes"
+            df.at[current_index, "review_(tp/fp)"] = tp_fp
+            df.at[current_index, "2nd_opinion_(y/n)"] = "Yes" if second_opinion else "No"
+            df.at[current_index, "request_report_(y/n)"] = request_report
+            df.at[current_index, "location/type"] = location_type.strip()
+            df.at[current_index, "comments"] = comments.strip()
+            df.at[current_index, "completed"] = "yes"
 
-            next_index = unreviewed_cases.index[unreviewed_cases.index > current_index].min()
-            st.session_state["current_case_index"] = next_index if not pd.isna(next_index) else None
+            all_sheets["case_data"] = df
+            index_sheet = all_sheets.get("index", pd.DataFrame(columns=["Sheet", "Last_Index"]))
+            if "sheet" not in index_sheet.columns or "last_index" not in index_sheet.columns:
+                index_sheet = pd.DataFrame(columns=["Sheet", "Last_Index"])
+            if not index_sheet.empty:
+                index_sheet = index_sheet.set_index("Sheet")
+            index_sheet.loc["case_data", "Last_Index"] = current_index
+            all_sheets["index"] = index_sheet.reset_index()
 
+            st.session_state["df"] = df
+            st.session_state["all_sheets"] = all_sheets
+
+            next_unreviewed = unreviewed_cases.index[unreviewed_cases.index > current_index].min() if not unreviewed_cases.empty else None
+            st.session_state["current_case_index"] = next_unreviewed if not pd.isna(next_unreviewed) else None
+            if st.session_state["current_case_index"] is None:
+                st.success("You have completed all available cases!")
+            else:
+                reset_form(st.session_state["current_case_index"])
             st.rerun()
 
-    # Case Review & Login Tabs
     tab1, tab2 = st.tabs(["Case Review", "Login Info"])
     with tab2:
         st.subheader("Login Info")
         st.write("**Username:** rpxuser")
         st.write("**Password:** PpD4u2RK")
 
-    # Step 3: Download Button for Final Workbook
     st.markdown("---")
     st.subheader("Download Completed Workbook")
 
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        st.session_state["dataframe"].to_excel(writer, index=False, sheet_name="Case Data")
-        writer.book.create_sheet("index")
-        index_sheet = writer.sheets["index"]
-        index_sheet.append(["Sheet", "Last_Index"])
-        index_sheet.append(["Case Data", st.session_state.get("current_case_index", len(df))])
-
-        ws = writer.sheets["Case Data"]
-        for i, column in enumerate(df.columns, 1):
-            ws.column_dimensions[get_column_letter(i)].width = 20
-            for cell in ws[get_column_letter(i)]:
-                cell.alignment = Alignment(horizontal='left')
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        for sheet, data in all_sheets.items():
+            data.to_excel(writer, sheet_name=sheet, index=False)
+            ws = writer.sheets[sheet]
+            for i, column in enumerate(data.columns, 1):
+                ws.column_dimensions[get_column_letter(i)].width = 20
+                for cell in ws[get_column_letter(i)]:
+                    cell.alignment = Alignment(horizontal="left")
 
     st.download_button(
         label="📥 Download Updated Excel",
         data=output.getvalue(),
         file_name="updated_review.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
