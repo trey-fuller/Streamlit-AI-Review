@@ -90,14 +90,15 @@ if uploaded_file and "df" in st.session_state and st.session_state["df"] is not 
     st.write(f"Progress: {len(reviewed_cases)}/{len(df)} cases completed")
     st.write(f"Case {current_index+1}/{len(df)}: {case.get('accession', '')}")
 
-col_open, col_text = st.columns([1, 2])
-with col_open:
-    studio_url = case.get("studio_link", "")
-    if studio_url:
-        st.markdown(f"<a href='{studio_url}' target='_blank'><button>Open Studio Link</button></a>", unsafe_allow_html=True)
+if uploaded_file and "df" in st.session_state and st.session_state["df"] is not None:
+    col_open, col_text = st.columns([1, 2])
+    with col_open:
+        studio_url = case.get("studio_link", "")
+        if studio_url:
+            st.markdown(f"<a href='{studio_url}' target='_blank'><button>Open Studio Link</button></a>", unsafe_allow_html=True)
 
-with col_text:
-    st.write("👈 **Click here to launch a case.**")
+    with col_text:
+        st.write("👈 **Click here to launch a case.**")
 
 default_values = {
     "tp-fp": "TP",
