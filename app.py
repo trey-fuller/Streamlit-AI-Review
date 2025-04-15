@@ -58,8 +58,21 @@ if uploaded_file:
     unreviewed_cases = df[df["completed"] == "no"]
     current_index = st.session_state.get("current_case_index")
 
-    if current_index not in df.index:
-        current_index = unreviewed_cases.index.min() if not unreviewed_cases.empty else df.index.min()
+    # Fallbacks for empty/unreviewed data
+    if len(df) == 0:
+        st.warning("The uploaded file has no cases to review.")
+        st.stop()
+
+    if pd.isna(current_index) or current_index not in df.index:
+        if not unreviewed_cases.empty:
+            current_index = unreviewed_cases.index.min()
+        else:
+            current_index = df.index.min()
+
+        if pd.isna(current_index):
+            st.success("All cases have been completed.")
+            st.stop()
+
         st.session_state["current_case_index"] = current_index
 
     case = df.loc[current_index]
