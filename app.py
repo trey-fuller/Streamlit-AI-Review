@@ -9,17 +9,7 @@ from openpyxl.utils import get_column_letter
 st.set_page_config(page_title="AI Review Workflow", layout="wide")
 st.title("AI Review Workflow")
 
-# 🔐 Password protection
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
 
-if not st.session_state["authenticated"]:
-    pwd = st.text_input("Enter password to access reviewer", type="password")
-    if pwd == "aireview2025":
-        st.session_state["authenticated"] = True
-        st.experimental_rerun()
-    else:
-        st.stop()
 
 uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
 
@@ -206,7 +196,7 @@ with tab2:
     st.write("**Password:** PpD4u2RK")
 
 st.markdown("---")
-st.subheader("Download Completed Workbook")
+st.subheader("Download Updated Workbook")
 
 output = BytesIO()
 with pd.ExcelWriter(output, engine="openpyxl") as writer:
