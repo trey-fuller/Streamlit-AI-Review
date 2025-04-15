@@ -75,8 +75,11 @@ if uploaded_file:
 
         st.session_state["current_case_index"] = current_index
 
-    case = df.loc[current_index]
+    if pd.isna(current_index) or current_index not in df.index:
+        st.success("All cases have been completed.")
+        st.stop()
 
+    case = df.loc[current_index]
     st.write(f"Progress: {len(reviewed_cases)}/{len(df)} cases completed")
     st.write(f"Case {current_index+1}/{len(df)}: {case.get('accession', '')}")
 
