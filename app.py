@@ -128,11 +128,12 @@ if uploaded_file and current_index is not None:
     ):
         reset_form(current_index)
 
-tp_fp = st.radio("True Positive / False Positive", ["TP", "FP"], key=f"tp-fp_{current_index}", index=0 if st.session_state.get(f"tp-fp_{current_index}") == "TP" else 1)
-second_opinion = st.checkbox("Request Second Opinion", key=f"second-opinion_{current_index}", value=st.session_state.get(f"second-opinion_{current_index}", False))
-request_report = st.radio("Request Report", ["No", "Yes"], key=f"request-report_{current_index}", index=0 if st.session_state.get(f"request-report_{current_index}") == "No" else 1)
-location_type = st.text_area("Location/Type", key=f"location-type_{current_index}", value=st.session_state.get(f"location-type_{current_index}", ""))
-comments = st.text_area("Comments (Optional)", key=f"comment_{current_index}", value=st.session_state.get(f"comment_{current_index}", ""))
+if uploaded_file and current_index is not None:
+    tp_fp = st.radio("True Positive / False Positive", ["TP", "FP"], key=f"tp-fp_{current_index}", index=0 if st.session_state.get(f"tp-fp_{current_index}") == "TP" else 1)
+    second_opinion = st.checkbox("Request Second Opinion", key=f"second-opinion_{current_index}", value=st.session_state.get(f"second-opinion_{current_index}", False))
+    request_report = st.radio("Request Report", ["No", "Yes"], key=f"request-report_{current_index}", index=0 if st.session_state.get(f"request-report_{current_index}") == "No" else 1)
+    location_type = st.text_area("Location/Type", key=f"location-type_{current_index}", value=st.session_state.get(f"location-type_{current_index}", ""))
+    comments = st.text_area("Comments (Optional)", key=f"comment_{current_index}", value=st.session_state.get(f"comment_{current_index}", ""))
 
 col1, col2, col3 = st.columns([1, 2, 1])
 with col1:
