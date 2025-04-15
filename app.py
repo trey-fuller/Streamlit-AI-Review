@@ -9,7 +9,6 @@ from openpyxl.utils import get_column_letter
 st.set_page_config(page_title="AI Review Workflow", layout="wide")
 st.title("AI Review Workflow")
 
-# Step 1: Upload Excel File
 uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
 
 if uploaded_file:
@@ -45,6 +44,17 @@ if uploaded_file:
     st.write(f"Progress: {len(reviewed_cases)}/{len(df)} cases completed")
     st.write(f"Case {current_index+1}/{len(df)}: {case.get('accession', '')}")
 
+    # Studio Link Button (Markdown-based)
+    studio_url = case.get("studio_link", "")
+    if studio_url:
+        col_open, col_text = st.columns([1, 2])
+        with col_open:
+            st.markdown(f"[🔗 Open Studio Link]({studio_url})", unsafe_allow_html=True)
+        with col_text:
+            st.write("👈 **Click here to launch the first case. The rest will auto-launch.**")
+    else:
+        st.warning("No studio link available for this case.")
+
     tp_fp = st.radio("True Positive / False Positive", ["TP", "FP"], key=f"tp-fp_{current_index}")
     second_opinion = st.checkbox("Request Second Opinion", key=f"second-opinion_{current_index}")
     request_report = st.radio("Request Report", ["No", "Yes"], key=f"request-report_{current_index}")
@@ -74,6 +84,13 @@ if uploaded_file:
 
             st.rerun()
 
+    # Case Review & Login Tabs
+    tab1, tab2 = st.tabs(["Case Review", "Login Info"])
+    with tab2:
+        st.subheader("Login Info")
+        st.write("**Username:** rpxuser")
+        st.write("**Password:** PpD4u2RK")
+
     # Step 3: Download Button for Final Workbook
     st.markdown("---")
     st.subheader("Download Completed Workbook")
@@ -86,7 +103,6 @@ if uploaded_file:
         index_sheet.append(["Sheet", "Last_Index"])
         index_sheet.append(["Case Data", st.session_state.get("current_case_index", len(df))])
 
-        # Format Case Data columns
         ws = writer.sheets["Case Data"]
         for i, column in enumerate(df.columns, 1):
             ws.column_dimensions[get_column_letter(i)].width = 20
