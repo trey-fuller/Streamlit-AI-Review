@@ -97,7 +97,7 @@ with col_open:
         st.markdown(f"<a href='{studio_url}' target='_blank'><button>Open Studio Link</button></a>", unsafe_allow_html=True)
 
 with col_text:
-    st.write("👈 **Click here to launch the first case. The rest will auto-launch.**")
+    st.write("👈 **Click here to launch a case.**")
 
 default_values = {
     "tp-fp": "TP",
