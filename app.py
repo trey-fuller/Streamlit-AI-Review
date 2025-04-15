@@ -116,8 +116,11 @@ def reset_form(idx):
         st.session_state[f"location-type_{idx}"] = row.get("location/type", "")
         st.session_state[f"comment_{idx}"] = row.get("comments", "")
 
-# Avoid resetting form unless explicitly navigating
-    if f"tp-fp_{current_index}" not in st.session_state:
+# Avoid resetting form unless explicitly navigating or just loaded after rerun
+    if (
+        f"tp-fp_{current_index}" not in st.session_state
+        and not st.session_state.get("just_submitted", False)
+    ):
         reset_form(current_index)
 
 tp_fp = st.radio("True Positive / False Positive", ["TP", "FP"], key=f"tp-fp_{current_index}", index=0 if st.session_state.get(f"tp-fp_{current_index}") == "TP" else 1)
@@ -169,6 +172,7 @@ with col3:
         unreviewed_cases = df[df["completed"] == "no"]
         next_unreviewed = unreviewed_cases.index[unreviewed_cases.index > current_index].min() if not unreviewed_cases.empty else None
         st.session_state["current_case_index"] = next_unreviewed if not pd.isna(next_unreviewed) else None
+        st.session_state["just_submitted"] = True
 
         # ✅ Auto-launch next case if available
         if st.session_state["current_case_index"] is not None:
