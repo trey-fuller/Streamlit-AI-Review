@@ -120,7 +120,8 @@ def reset_form(idx):
         st.session_state[f"location-type_{idx}"] = row.get("location/type", "")
         st.session_state[f"comment_{idx}"] = row.get("comments", "")
 
-# Avoid resetting form unless explicitly navigating or just loaded after rerun
+if uploaded_file and current_index is not None:
+    # Avoid resetting form unless explicitly navigating or just loaded after rerun
     if (
         f"tp-fp_{current_index}" not in st.session_state
         and not st.session_state.get("just_submitted", False)
