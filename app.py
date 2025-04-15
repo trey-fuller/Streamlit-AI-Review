@@ -138,7 +138,8 @@ if uploaded_file and current_index is not None:
 col1, col2, col3 = st.columns([1, 2, 1])
 with col1:
     if st.button("Previous Case"):
-        prev_idx = case_indices.index(current_index) - 1
+        if current_index in case_indices:
+            prev_idx = case_indices.index(current_index) - 1
         if prev_idx >= 0:
             st.session_state["current_case_index"] = case_indices[prev_idx]
             reset_form(st.session_state["current_case_index"])
@@ -146,7 +147,8 @@ with col1:
 
 with col2:
     if st.button("Next Case"):
-        next_idx = case_indices.index(current_index) + 1
+        if current_index in case_indices:
+            next_idx = case_indices.index(current_index) + 1
         if next_idx < len(case_indices):
             st.session_state["current_case_index"] = case_indices[next_idx]
             reset_form(st.session_state["current_case_index"])
@@ -154,11 +156,11 @@ with col2:
 
 with col3:
     if st.button("Submit & Next"):
-        df.at[current_index, "review_(tp/fp)"] = tp_fp
-        df.at[current_index, "2nd_opinion_(y/n)"] = "Yes" if second_opinion else "No"
-        df.at[current_index, "request_report_(y/n)"] = request_report
-        df.at[current_index, "location/type"] = location_type.strip()
-        df.at[current_index, "comments"] = comments.strip()
+        df.at[current_index, "review_(tp/fp)"] = str(tp_fp)
+        df.at[current_index, "2nd_opinion_(y/n)"] = str("Yes" if second_opinion else "No")
+        df.at[current_index, "request_report_(y/n)"] = str(request_report)
+        df.at[current_index, "location/type"] = str(location_type).strip()
+        df.at[current_index, "comments"] = str(comments).strip()
         df.at[current_index, "completed"] = "yes"
 
         all_sheets["case_data"] = df
@@ -200,19 +202,20 @@ with tab2:
     st.write("**Password:** PpD4u2RK")
 
 st.markdown("---")
-st.subheader("Download Completed Workbook")
+if uploaded_file and "all_sheets" in st.session_state:
+    st.subheader("Download Completed Workbook")
 
-output = BytesIO()
-with pd.ExcelWriter(output, engine="openpyxl") as writer:
-    for sheet, data in all_sheets.items():
-        data.to_excel(writer, sheet_name=sheet, index=False)
-        ws = writer.sheets[sheet]
-        for i, column in enumerate(data.columns, 1):
-            ws.column_dimensions[get_column_letter(i)].width = 20
-            for cell in ws[get_column_letter(i)]:
-                cell.alignment = Alignment(horizontal="left")
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        for sheet, data in all_sheets.items():
+            data.to_excel(writer, sheet_name=sheet, index=False)
+            ws = writer.sheets[sheet]
+            for i, column in enumerate(data.columns, 1):
+                ws.column_dimensions[get_column_letter(i)].width = 20
+                for cell in ws[get_column_letter(i)]:
+                    cell.alignment = Alignment(horizontal="left")
 
-st.download_button(
+    st.download_button(
     label="📥 Download Updated Excel",
     data=output.getvalue(),
     file_name=f"{uploaded_file.name.replace('.xlsx', '')}-updated-{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
