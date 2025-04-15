@@ -86,8 +86,9 @@ if uploaded_file:
 
     case = df.loc[current_index]
 
-st.write(f"Progress: {len(reviewed_cases)}/{len(df)} cases completed")
-st.write(f"Case {current_index+1}/{len(df)}: {case.get('accession', '')}")
+if uploaded_file and "df" in st.session_state and st.session_state["df"] is not None:
+    st.write(f"Progress: {len(reviewed_cases)}/{len(df)} cases completed")
+    st.write(f"Case {current_index+1}/{len(df)}: {case.get('accession', '')}")
 
 col_open, col_text = st.columns([1, 2])
 with col_open:
@@ -96,7 +97,7 @@ with col_open:
         st.markdown(f"<a href='{studio_url}' target='_blank'><button>Open Studio Link</button></a>", unsafe_allow_html=True)
 
 with col_text:
-    st.write("👈 **Click here to launch a case.**")
+    st.write("👈 **Click here to launch the first case. The rest will auto-launch.**")
 
 default_values = {
     "tp-fp": "TP",
@@ -196,7 +197,7 @@ with tab2:
     st.write("**Password:** PpD4u2RK")
 
 st.markdown("---")
-st.subheader("Download Updated Workbook")
+st.subheader("Download Completed Workbook")
 
 output = BytesIO()
 with pd.ExcelWriter(output, engine="openpyxl") as writer:
