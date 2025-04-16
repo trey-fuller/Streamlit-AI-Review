@@ -9,8 +9,6 @@ from openpyxl.utils import get_column_letter
 st.set_page_config(page_title="AI Review Workflow", layout="wide")
 st.title("AI Review Workflow")
 
-
-
 uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
 
 if uploaded_file:
@@ -35,12 +33,10 @@ if uploaded_file:
 
         df = next((v for k, v in all_sheets.items() if k.strip().lower() == "case data"), pd.DataFrame())
 
-        
-        # ensure 'completed' exists and is normalized
         if "completed" in df.columns:
-                df["completed"] = df["completed"].fillna("no").astype(str).str.strip().str.lower()
+            df["completed"] = df["completed"].fillna("no").astype(str).str.strip().str.lower()
         else:
-                df["completed"] = "no"
+            df["completed"] = "no"
 
         index_sheet = all_sheets.get("index", pd.DataFrame())
         if not index_sheet.empty and "sheet" in index_sheet.columns and "last_index" in index_sheet.columns:
@@ -50,11 +46,17 @@ if uploaded_file:
         else:
             last_index = 0
 
+        reviewed_cases = df[df["completed"] == "yes"]
+        unreviewed_cases = df[df["completed"] == "no"]
+
+        if not unreviewed_cases.empty:
+            current_case_index = unreviewed_cases.index.min()
+        else:
+            current_case_index = df.index.max()
+
+        st.session_state["current_case_index"] = current_case_index
         st.session_state["all_sheets"] = all_sheets
         st.session_state["df"] = df
-
-        valid_indices = df.index.tolist()
-        st.session_state["current_case_index"] = last_index if last_index in valid_indices else valid_indices[0] if valid_indices else None
 
     df = st.session_state["df"]
     all_sheets = st.session_state["all_sheets"]
@@ -63,7 +65,6 @@ if uploaded_file:
     unreviewed_cases = df[df["completed"] == "no"]
     current_index = st.session_state.get("current_case_index")
 
-    # Fallbacks for empty/unreviewed data
     if len(df) == 0:
         st.warning("The uploaded file has no cases to review.")
         st.stop()
@@ -121,7 +122,6 @@ def reset_form(idx):
         st.session_state[f"comment_{idx}"] = row.get("comments", "")
 
 if uploaded_file and current_index is not None:
-    # Avoid resetting form unless explicitly navigating or just loaded after rerun
     if (
         f"tp-fp_{current_index}" not in st.session_state
         and not st.session_state.get("just_submitted", False)
@@ -140,19 +140,19 @@ with col1:
     if st.button("Previous Case"):
         if current_index in case_indices:
             prev_idx = case_indices.index(current_index) - 1
-        if prev_idx >= 0:
-            st.session_state["current_case_index"] = case_indices[prev_idx]
-            reset_form(st.session_state["current_case_index"])
-            st.rerun()
+            if prev_idx >= 0:
+                st.session_state["current_case_index"] = case_indices[prev_idx]
+                reset_form(st.session_state["current_case_index"])
+                st.rerun()
 
 with col2:
     if st.button("Next Case"):
         if current_index in case_indices:
             next_idx = case_indices.index(current_index) + 1
-        if next_idx < len(case_indices):
-            st.session_state["current_case_index"] = case_indices[next_idx]
-            reset_form(st.session_state["current_case_index"])
-            st.rerun()
+            if next_idx < len(case_indices):
+                st.session_state["current_case_index"] = case_indices[next_idx]
+                reset_form(st.session_state["current_case_index"])
+                st.rerun()
 
 with col3:
     if st.button("Submit & Next"):
@@ -182,7 +182,6 @@ with col3:
         st.session_state["current_case_index"] = next_unreviewed if not pd.isna(next_unreviewed) else None
         st.session_state["just_submitted"] = True
 
-        # ✅ Auto-launch next case if available
         if st.session_state["current_case_index"] is not None:
             next_case = df.loc[st.session_state["current_case_index"]]
             next_studio_url = next_case.get("studio_link", "")
@@ -216,8 +215,8 @@ if uploaded_file and "all_sheets" in st.session_state:
                     cell.alignment = Alignment(horizontal="left")
 
     st.download_button(
-    label="📥 Download Updated Excel",
-    data=output.getvalue(),
-    file_name=f"{uploaded_file.name.replace('.xlsx', '')}-updated-{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-)
+        label="📥 Download Updated Excel",
+        data=output.getvalue(),
+        file_name=f"{uploaded_file.name.replace('.xlsx', '')}-updated-{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
