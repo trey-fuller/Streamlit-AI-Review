@@ -52,9 +52,11 @@ if uploaded_file:
         if not unreviewed_cases.empty:
             current_case_index = unreviewed_cases.index.min()
         else:
-            current_case_index = df.index[-1]
             st.balloons()
             st.success("All cases have been completed.")
+            st.session_state["df"] = df
+            st.session_state["all_sheets"] = all_sheets
+            st.stop()
 
         st.session_state["current_case_index"] = current_case_index
         st.session_state["all_sheets"] = all_sheets
@@ -75,9 +77,9 @@ if uploaded_file:
         if not unreviewed_cases.empty:
             current_index = unreviewed_cases.index.min()
         else:
-            current_index = df.index[-1]
             st.balloons()
             st.success("All cases have been completed.")
+            st.stop()
 
         st.session_state["current_case_index"] = current_index
 
@@ -186,6 +188,7 @@ if uploaded_file and "df" in st.session_state and st.session_state["df"] is not 
                 else:
                     st.balloons()
                     st.success("You have completed all available cases!")
+                    st.stop()
 
                 st.rerun()
 
