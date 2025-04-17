@@ -52,11 +52,9 @@ if uploaded_file:
         if not unreviewed_cases.empty:
             current_case_index = unreviewed_cases.index.min()
         else:
+            current_case_index = df.index[-1]
             st.balloons()
             st.success("All cases have been completed.")
-            st.session_state["df"] = df
-            st.session_state["all_sheets"] = all_sheets
-            st.stop()
 
         st.session_state["current_case_index"] = current_case_index
         st.session_state["all_sheets"] = all_sheets
@@ -77,15 +75,14 @@ if uploaded_file:
         if not unreviewed_cases.empty:
             current_index = unreviewed_cases.index.min()
         else:
+            current_index = df.index[-1]
             st.balloons()
             st.success("All cases have been completed.")
-            st.stop()
 
         st.session_state["current_case_index"] = current_index
 
     case = df.loc[current_index]
 
-if uploaded_file and "df" in st.session_state and st.session_state["df"] is not None:
     st.write(f"Progress: {len(reviewed_cases)}/{len(df)} cases completed")
     st.write(f"Case {current_index+1}/{len(df)}: {case.get('accession', '')}")
 
@@ -124,7 +121,7 @@ if uploaded_file and "df" in st.session_state and st.session_state["df"] is not 
     ):
         reset_form(current_index)
 
-    if current_index is not None:
+    if current_index is not None and current_index in df.index:
         tp_fp = st.radio("True Positive / False Positive", ["TP", "FP"], key=f"tp-fp_{current_index}", index=0 if st.session_state.get(f"tp-fp_{current_index}") == "TP" else 1)
         second_opinion = st.checkbox("Request Second Opinion", key=f"second-opinion_{current_index}", value=st.session_state.get(f"second-opinion_{current_index}", False))
         request_report = st.radio("Request Report", ["No", "Yes"], key=f"request-report_{current_index}", index=0 if st.session_state.get(f"request-report_{current_index}") == "No" else 1)
@@ -188,7 +185,6 @@ if uploaded_file and "df" in st.session_state and st.session_state["df"] is not 
                 else:
                     st.balloons()
                     st.success("You have completed all available cases!")
-                    st.stop()
 
                 st.rerun()
 
