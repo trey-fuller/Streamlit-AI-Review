@@ -112,8 +112,8 @@ if uploaded_file:
             st.session_state[f"tp-fp_{idx}"] = row.get("review_(tp/fp)", "TP")
             st.session_state[f"second-opinion_{idx}"] = row.get("2nd_opinion_(y/n)", "No") == "Yes"
             st.session_state[f"request-report_{idx}"] = row.get("request_report_(y/n)", "No")
-            st.session_state[f"location-type_{idx}"] = row.get("location/type", "")
-            st.session_state[f"comment_{idx}"] = row.get("comments", "")
+            st.session_state[f"location-type_{idx}"] = str(row.get("location/type", ""))
+            st.session_state[f"comment_{idx}"] = str(row.get("comments", ""))
 
     if (
         f"tp-fp_{current_index}" not in st.session_state
@@ -125,16 +125,8 @@ if uploaded_file:
         tp_fp = st.radio("True Positive / False Positive", ["TP", "FP"], key=f"tp-fp_{current_index}", index=0 if st.session_state.get(f"tp-fp_{current_index}") == "TP" else 1)
         second_opinion = st.checkbox("Request Second Opinion", key=f"second-opinion_{current_index}", value=st.session_state.get(f"second-opinion_{current_index}", False))
         request_report = st.radio("Request Report", ["No", "Yes"], key=f"request-report_{current_index}", index=0 if st.session_state.get(f"request-report_{current_index}") == "No" else 1)
-
-        if f"location-type_{current_index}" in st.session_state:
-            location_type = st.text_area("Location/Type", key=f"location-type_{current_index}")
-        else:
-            location_type = st.text_area("Location/Type", key=f"location-type_{current_index}", value="")
-
-        if f"comment_{current_index}" in st.session_state:
-            comments = st.text_area("Comments (Optional)", key=f"comment_{current_index}")
-        else:
-            comments = st.text_area("Comments (Optional)", key=f"comment_{current_index}", value="")
+        location_type = st.text_area("Location/Type", key=f"location-type_{current_index}", value=st.session_state.get(f"location-type_{current_index}", ""))
+        comments = st.text_area("Comments (Optional)", key=f"comment_{current_index}", value=st.session_state.get(f"comment_{current_index}", ""))
 
         col1, col2, col3 = st.columns([1, 2, 1])
         with col1:
